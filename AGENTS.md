@@ -1,0 +1,20 @@
+## Building
+
+- use `make build` for testing build errors.
+- if you ever add a new argument or flag to the cli then make sure to update the completion and README.md
+- Don't ever do commit unless you are being explicitely asked for it.
+- If you get asked to commit then use this rules:
+  - Follow Conventional Commits 1.0.0.
+  - 50 chars for title 70 chars for body.
+  - Cohesive long phrase or paragraph unless multiple points are needed.
+  - Use bullet points only if necessary for clarity.
+  - Past tense.
+  - State **what** and **why** only (no “how”).
+
+## Documentation
+
+- Documentation and help string style guidelines:
+  - Consistent British spelling.
+  - Professional butler style: clear, helpful, dignified but not pompous
+  - Remove any overly casual Americanisms
+  - Keep technical precision whilst maintaining readability
