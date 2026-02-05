@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,76 +12,200 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/urfave/cli/v3"
+
 	"sway-screenshot/internal/config"
 	"sway-screenshot/internal/daemon"
 	"sway-screenshot/pkg/protocol"
 )
 
 func main() {
-	if err := run(); err != nil {
+	cmd := &cli.Command{
+		Name:  "sway-screenshot",
+		Usage: "Recording and screenshot utility for sway",
+		Commands: []*cli.Command{
+			daemonCommand(),
+			waybarStatusCommand(),
+			obsToggleRecordingCommand(),
+			obsTogglePauseCommand(),
+			currentWindowClipboardCommand(),
+			currentWindowFileCommand(),
+			currentScreenClipboardCommand(),
+			selectionFileCommand(),
+			selectionEditCommand(),
+			selectionClipboardCommand(),
+			movieSelectionCommand(),
+			movieScreenCommand(),
+			movieCurrentWindowCommand(),
+			stopRecordingCommand(),
+			pauseRecordingCommand(),
+		},
+	}
+
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run() error {
-	cfg, err := config.Load()
-	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
-	}
+// Command definitions
 
-	// Parse command-line arguments
-	args := os.Args[1:]
-	if len(args) == 0 {
-		printHelp()
-		return nil
-	}
-
-	// Parse flags
-	delay := 0
-	useCurrentScreen := false
-	follow := false
-	i := 0
-
-	for i < len(args) {
-		if args[i] == "-h" || args[i] == "--help" {
-			printHelp()
-			return nil
-		} else if args[i] == "-c" {
-			useCurrentScreen = true
-			i++
-		} else if args[i] == "-t" {
-			if i+1 >= len(args) {
-				return fmt.Errorf("missing value for -t flag")
+func daemonCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "daemon",
+		Usage: "Run in daemon mode (auto-started if needed)",
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
 			}
-			fmt.Sscanf(args[i+1], "%d", &delay)
-			i += 2
-		} else if args[i] == "-follow" {
-			follow = true
-			i++
-		} else {
-			break
-		}
+			d := daemon.New(cfg)
+			return d.Start()
+		},
 	}
+}
 
-	if i >= len(args) {
-		printHelp()
-		return fmt.Errorf("no command specified")
+func waybarStatusCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "waybar-status",
+		Usage: "Output waybar status (JSON)",
+		Description: "Outputs current recording/screenshot status in Waybar JSON format.\n" +
+			"Poll interval: SWAY_SCREENSHOT_WAYBAR_POLL_INTERVAL (default: 1s)",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "follow",
+				Usage: "Continuously monitor and output on state change",
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+			return handleWaybarStatus(cfg, c.Bool("follow"))
+		},
 	}
+}
 
-	action := args[i]
+func obsToggleRecordingCommand() *cli.Command {
+	return createSimpleCommand("obs-toggle-recording", "Toggle OBS recording")
+}
 
-	// Special case: daemon mode
-	if action == "daemon" {
-		d := daemon.New(cfg)
-		return d.Start()
+func obsTogglePauseCommand() *cli.Command {
+	return createSimpleCommand("obs-toggle-pause", "Toggle OBS pause state")
+}
+
+func currentWindowClipboardCommand() *cli.Command {
+	return createScreenshotCommand("current-window-clipboard", "Capture focused window to clipboard")
+}
+
+func currentWindowFileCommand() *cli.Command {
+	return createScreenshotCommand("current-window-file", "Capture focused window to file")
+}
+
+func currentScreenClipboardCommand() *cli.Command {
+	return createScreenshotCommand("current-screen-clipboard", "Capture focused screen to clipboard")
+}
+
+func selectionFileCommand() *cli.Command {
+	return createScreenshotCommand("selection-file", "Capture selection to file (interactive actions)")
+}
+
+func selectionEditCommand() *cli.Command {
+	return createScreenshotCommand("selection-edit", "Capture selection and open editor")
+}
+
+func selectionClipboardCommand() *cli.Command {
+	return createScreenshotCommand("selection-clipboard", "Capture selection to clipboard (optional save/edit)")
+}
+
+func movieSelectionCommand() *cli.Command {
+	return createScreenshotCommand("movie-selection", "Record video of selection")
+}
+
+func movieScreenCommand() *cli.Command {
+	return createScreenshotCommand("movie-screen", "Record video of screen")
+}
+
+func movieCurrentWindowCommand() *cli.Command {
+	return createScreenshotCommand("movie-current-window", "Record video of focused window")
+}
+
+func stopRecordingCommand() *cli.Command {
+	return createSimpleCommand("stop-recording", "Stop wf-recorder and convert to mp4")
+}
+
+func pauseRecordingCommand() *cli.Command {
+	return createSimpleCommand("pause-recording", "Pause/resume current recording")
+}
+
+// Helper functions for command creation
+
+func createSimpleCommand(name, usage string) *cli.Command {
+	return &cli.Command{
+		Name:  name,
+		Usage: usage,
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := ensureDaemonRunning(cfg); err != nil {
+				return err
+			}
+
+			req := protocol.Request{
+				Command: "execute",
+				Action:  name,
+			}
+
+			return sendAndHandleRequest(cfg.SocketPath, req)
+		},
 	}
+}
 
-	// For waybar-status, we need to output JSON directly
-	if action == "waybar-status" {
-		return handleWaybarStatus(cfg, follow)
+func createScreenshotCommand(name, usage string) *cli.Command {
+	return &cli.Command{
+		Name:  name,
+		Usage: usage,
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "delay",
+				Aliases: []string{"t"},
+				Usage:   "Delay capture/recording in seconds",
+				Value:   0,
+			},
+			&cli.BoolFlag{
+				Name:    "current-screen",
+				Aliases: []string{"c"},
+				Usage:   "Use current focused screen (skip selection)",
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := ensureDaemonRunning(cfg); err != nil {
+				return err
+			}
+
+			req := protocol.Request{
+				Command: "execute",
+				Action:  name,
+				Options: map[string]interface{}{
+					"delay":              c.Int("delay"),
+					"use_current_screen": c.Bool("current-screen"),
+				},
+			}
+
+			return sendAndHandleRequest(cfg.SocketPath, req)
+		},
 	}
+}
 
-	// Ensure daemon is running
+func ensureDaemonRunning(cfg *config.Config) error {
 	if !isDaemonRunning(cfg.SocketPath) {
 		if err := startDaemon(cfg); err != nil {
 			return fmt.Errorf("failed to start daemon: %w", err)
@@ -89,27 +214,18 @@ func run() error {
 		// Wait for daemon to be ready
 		for i := 0; i < 10; i++ {
 			if isDaemonRunning(cfg.SocketPath) {
-				break
+				return nil
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
 
-		if !isDaemonRunning(cfg.SocketPath) {
-			return fmt.Errorf("daemon failed to start")
-		}
+		return fmt.Errorf("daemon failed to start")
 	}
+	return nil
+}
 
-	// Send command to daemon
-	req := protocol.Request{
-		Command: "execute",
-		Action:  action,
-		Options: map[string]interface{}{
-			"delay":              delay,
-			"use_current_screen": useCurrentScreen,
-		},
-	}
-
-	resp, err := sendRequest(cfg.SocketPath, req)
+func sendAndHandleRequest(socketPath string, req protocol.Request) error {
+	resp, err := sendRequest(socketPath, req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
@@ -120,6 +236,8 @@ func run() error {
 
 	return nil
 }
+
+// Utility functions
 
 func isDaemonRunning(socketPath string) bool {
 	conn, err := net.Dial("unix", socketPath)
@@ -272,40 +390,3 @@ func statusEqual(a, b *protocol.WaybarStatus) bool {
 		a.Alt == b.Alt
 }
 
-func printHelp() {
-	help := `Recording and screenshot utility for sway
-
-Usage:
-  sway-screenshot [-t seconds] <command>
-
-Options:
-  -h, --help        Show this help
-  -c                Use current focused screen (skip selection)
-  -t <seconds>      Delay capture or recording
-
-Commands:
-  daemon                   Run in daemon mode (auto-started if needed)
-  waybar-status [-follow]  Output waybar status (JSON)
-                           -follow: Continuously monitor and output on state change
-                           Poll interval: SWAY_SCREENSHOT_WAYBAR_POLL_INTERVAL (default: 1s)
-
-  obs-toggle-recording     Toggle OBS recording
-  obs-toggle-pause         Toggle OBS pause state
-
-  current-window-clipboard Capture focused window to clipboard
-  current-window-file      Capture focused window to file
-  current-screen-clipboard Capture focused screen to clipboard
-
-  selection-file           Capture selection to file (interactive actions)
-  selection-edit           Capture selection and open editor
-  selection-clipboard      Capture selection to clipboard (optional save/edit)
-
-  movie-selection          Record video of selection
-  movie-screen             Record video of screen
-  movie-current-window     Record video of focused window
-
-  stop-recording           Stop wf-recorder and convert to mp4
-  pause-recording          Pause/resume current recording
-`
-	fmt.Print(help)
-}
