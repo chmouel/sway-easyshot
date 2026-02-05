@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"sway-screenshot/internal/external"
+	"sway-easyshot/internal/external"
 )
 
 type swayRect struct {

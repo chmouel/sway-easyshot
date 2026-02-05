@@ -9,10 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"sway-screenshot/internal/config"
-	"sway-screenshot/internal/daemon"
-	"sway-screenshot/internal/state"
-	"sway-screenshot/pkg/protocol"
+	"sway-easyshot/internal/config"
+	"sway-easyshot/internal/daemon"
+	"sway-easyshot/internal/state"
+	"sway-easyshot/pkg/protocol"
 	"syscall"
 	"time"
 
@@ -21,7 +21,7 @@ import (
 
 func main() {
 	cmd := &cli.Command{
-		Name:  "sway-screenshot",
+		Name:  "sway-easyshot",
 		Usage: "Recording and screenshot utility for sway",
 		Commands: []*cli.Command{
 			daemonCommand(),

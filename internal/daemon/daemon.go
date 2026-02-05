@@ -13,11 +13,11 @@ import (
 	"syscall"
 	"time"
 
-	"sway-screenshot/internal/commands"
-	"sway-screenshot/internal/config"
-	"sway-screenshot/internal/external"
-	"sway-screenshot/internal/state"
-	"sway-screenshot/pkg/protocol"
+	"sway-easyshot/internal/commands"
+	"sway-easyshot/internal/config"
+	"sway-easyshot/internal/external"
+	"sway-easyshot/internal/state"
+	"sway-easyshot/pkg/protocol"
 )
 
 type Daemon struct {

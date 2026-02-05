@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"sway-screenshot/internal/config"
-	"sway-screenshot/internal/external"
-	"sway-screenshot/internal/notify"
-	"sway-screenshot/internal/state"
-	"sway-screenshot/internal/sway"
+	"sway-easyshot/internal/config"
+	"sway-easyshot/internal/external"
+	"sway-easyshot/internal/notify"
+	"sway-easyshot/internal/state"
+	"sway-easyshot/internal/sway"
 )
 
 type ScreenshotHandler struct {

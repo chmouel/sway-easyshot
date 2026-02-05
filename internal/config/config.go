@@ -30,14 +30,14 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		SaveLocation:       getEnv("SWAY_SCREENSHOT_SAVE_LOCATION", filepath.Join(homeDir, "Downloads", "Screenshots")),
-		CacheFile:          filepath.Join(homeDir, ".cache", ".sway-screenshot-recording"),
+		CacheFile:          filepath.Join(homeDir, ".cache", ".sway-easyshot-recording"),
 		CleanupTime:        3 * 24 * time.Hour, // 3 days
 		AIModelImage:       getEnv("SWAY_SCREENSHOT_AI_MODEL", "gemini:gemini-2.5-flash-image"),
 		ScreenshotIcon:     filepath.Join(homeDir, ".local", "share", "icons", "screenshot.svg"),
 		RecordingStartIcon: filepath.Join(homeDir, ".local", "share", "icons", "record-start.svg"),
 		RecordingStopIcon:  filepath.Join(homeDir, ".local", "share", "icons", "record-stop.svg"),
 		RecordingPauseIcon: filepath.Join(homeDir, ".local", "share", "icons", "record-pause.svg"),
-		SocketPath:         fmt.Sprintf("/run/user/%d/sway-screenshot.sock", uid),
+		SocketPath:         fmt.Sprintf("/run/user/%d/sway-easyshot.sock", uid),
 		WaybarPollInterval: getPollInterval(),
 	}
 

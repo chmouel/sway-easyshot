@@ -1,4 +1,4 @@
-# sway-screenshot
+# sway-easyshot
 
 A screenshot and screen recording utility for Sway/Wayland.
 
@@ -36,7 +36,7 @@ A screenshot and screen recording utility for Sway/Wayland.
 ## Installation
 
 ```bash
-go install github.com/chmouel/sway-screenshot/cmd/sway-screenshot@latest
+go install github.com/chmouel/sway-easyshot/cmd/sway-easyshot@latest
 ```
 
 Or build from source:
@@ -49,36 +49,36 @@ make build
 
 ```bash
 # Screenshot commands
-sway-screenshot selection-clipboard
-sway-screenshot selection-file
-sway-screenshot selection-edit
-sway-screenshot current-window-clipboard
-sway-screenshot current-window-file
-sway-screenshot current-screen-clipboard
+sway-easyshot selection-clipboard
+sway-easyshot selection-file
+sway-easyshot selection-edit
+sway-easyshot current-window-clipboard
+sway-easyshot current-window-file
+sway-easyshot current-screen-clipboard
 
 # Recording commands
-sway-screenshot movie-selection
-sway-screenshot movie-screen
-sway-screenshot movie-current-window
-sway-screenshot stop-recording
-sway-screenshot pause-recording
-sway-screenshot toggle-record
+sway-easyshot movie-selection
+sway-easyshot movie-screen
+sway-easyshot movie-current-window
+sway-easyshot stop-recording
+sway-easyshot pause-recording
+sway-easyshot toggle-record
 
 # Waybar integration
-sway-screenshot waybar-status
-sway-screenshot waybar-status --follow
+sway-easyshot waybar-status
+sway-easyshot waybar-status --follow
 
 # OBS integration
-sway-screenshot obs-toggle-recording
-sway-screenshot obs-toggle-pause
+sway-easyshot obs-toggle-recording
+sway-easyshot obs-toggle-pause
 ```
 
 ## Waybar Configuration
 
 ```json
 "custom/screenshot": {
-    "exec": "sway-screenshot waybar-status --follow",
-    "on-click": "sway-screenshot toggle-record -a movie-current-window",
+    "exec": "sway-easyshot waybar-status --follow",
+    "on-click": "sway-easyshot toggle-record -a movie-current-window",
     "return-type": "json"
 }
 ```
@@ -88,7 +88,7 @@ sway-screenshot obs-toggle-pause
 ```config
 ```
 
-bindsym Print exec sway-screenshot toggle-record -a movie-current-window -w 5
+bindsym Print exec sway-easyshot toggle-record -a movie-current-window -w 5
 
 ## Licence
 

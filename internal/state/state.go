@@ -2,7 +2,7 @@ package state
 
 import (
 	"fmt"
-	"sway-screenshot/pkg/protocol"
+	"sway-easyshot/pkg/protocol"
 	"sync"
 	"time"
 )

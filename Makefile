@@ -1,4 +1,4 @@
-NAME = sway-screenshot
+NAME = sway-easyshot
 
 all: build
 

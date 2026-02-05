@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sway-screenshot/internal/config"
-	"sway-screenshot/internal/external"
-	"sway-screenshot/internal/notify"
-	"sway-screenshot/internal/state"
+	"sway-easyshot/internal/config"
+	"sway-easyshot/internal/external"
+	"sway-easyshot/internal/notify"
+	"sway-easyshot/internal/state"
 	"time"
 )
 

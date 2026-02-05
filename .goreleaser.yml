@@ -2,7 +2,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     main: ./
-    binary: sway-screenshot
+    binary: sway-easyshot
     goos:
       - linux
     goarch:
@@ -30,7 +30,7 @@ release:
 
 nfpms:
   - file_name_template: >-
-      sway-screenshot-
+      sway-easyshot-
       {{- .Version}}_{{.Os}}-
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
@@ -38,8 +38,8 @@ nfpms:
       {{- else if eq .Arch "linux" }}Linux
       {{- else if eq .Arch "windows" }}Windows
       {{- else }}{{ .Arch }}{{ end }}
-    homepage: https://github.com/chmouel/sway-screenshot
-    description: "sway-screenshot - A webhook and https://smee.io forwarder"
+    homepage: https://github.com/chmouel/sway-easyshot
+    description: "sway-easyshot - A webhook and https://smee.io forwarder"
     maintainer: Chmouel Boudjnah <chmouel@chmouel.com>
     license: Apache 2.0
     formats:
@@ -48,11 +48,11 @@ nfpms:
       - rpm
     bindir: /usr/bin
     contents:
-      - src: ./misc/sway-screenshot-server.service
-        dst: /etc/systemd/system/sway-screenshot-server.service
+      - src: ./misc/sway-easyshot-server.service
+        dst: /etc/systemd/system/sway-easyshot-server.service
         type: "config|noreplace"
-      - src: ./misc/sway-screenshot.service
-        dst: /etc/systemd/system/sway-screenshot-client.service
+      - src: ./misc/sway-easyshot.service
+        dst: /etc/systemd/system/sway-easyshot-client.service
         type: "config|noreplace"
 changelog:
   sort: asc
@@ -68,14 +68,14 @@ changelog:
       - Update README.md
 
 aurs:
-  - name: sway-screenshot-bin
-    homepage: "https://github.com/chmouel/sway-screenshot"
-    description: "sway-screenshot - Sway Screenshot control"
+  - name: sway-easyshot-bin
+    homepage: "https://github.com/chmouel/sway-easyshot"
+    description: "sway-easyshot - Sway Screenshot control"
     maintainers:
       - "Chmouel Boudjnah <chmouel@chmouel.com>"
     license: Apache 2.0
     private_key: "{{ .Env.AUR_PRIVATE_KEY }}"
-    git_url: ssh://aur@aur.archlinux.org/sway-screenshot-bin.git
+    git_url: ssh://aur@aur.archlinux.org/sway-easyshot-bin.git
     package: |-
-      install -Dm755 "./sway-screenshot" "${pkgdir}/usr/bin/sway-screenshot"
-      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/sway-screenshot/LICENSE"
+      install -Dm755 "./sway-easyshot" "${pkgdir}/usr/bin/sway-easyshot"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/sway-easyshot/LICENSE"

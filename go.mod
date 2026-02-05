@@ -1,4 +1,4 @@
-module sway-screenshot
+module sway-easyshot
 
 go 1.25.6
 
