@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"syscall"
-	"time"
-
 	"sway-screenshot/internal/config"
 	"sway-screenshot/internal/external"
 	"sway-screenshot/internal/notify"
 	"sway-screenshot/internal/state"
 	"sway-screenshot/internal/sway"
+	"syscall"
+	"time"
 )
 
 type RecordingHandler struct {
@@ -95,8 +94,6 @@ func (h *RecordingHandler) startRecording(ctx context.Context, geometry, output 
 
 	// Update state
 	h.state.SetRecording(true, file, cmd.Process.Pid)
-
-	notify.Send(3000, h.cfg.RecordingStartIcon, "Recording started")
 
 	// Monitor process in background
 	go func() {
