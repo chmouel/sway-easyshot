@@ -45,13 +45,6 @@ nfpms:
       - deb
       - rpm
     bindir: /usr/bin
-    contents:
-      - src: ./misc/sway-easyshot-server.service
-        dst: /etc/systemd/system/sway-easyshot-server.service
-        type: "config|noreplace"
-      - src: ./misc/sway-easyshot.service
-        dst: /etc/systemd/system/sway-easyshot-client.service
-        type: "config|noreplace"
 changelog:
   sort: asc
   use: github
