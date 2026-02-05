@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sway-screenshot/pkg/protocol"
 	"sync"
+	"time"
 )
 
 type State struct {
@@ -12,6 +13,7 @@ type State struct {
 	paused             bool
 	recordingFile      string
 	recordingPID       int
+	recordingStartTime time.Time
 	obsRecording       bool
 	obsPaused          bool
 	countdownRemaining int
@@ -73,6 +75,11 @@ func (s *State) SetRecording(recording bool, file string, pid int) {
 	s.recording = recording
 	s.recordingFile = file
 	s.recordingPID = pid
+	if recording {
+		s.recordingStartTime = time.Now()
+	} else {
+		s.recordingStartTime = time.Time{}
+	}
 }
 
 func (s *State) SetOBSState(recording bool, paused bool) {
@@ -132,9 +139,12 @@ func (s *State) GetWaybarStatus() *protocol.WaybarStatus {
 				Alt:     "paused",
 			}
 		}
+		elapsed := time.Since(s.recordingStartTime)
+		minutes := int(elapsed.Minutes())
+		seconds := int(elapsed.Seconds()) % 60
 		return &protocol.WaybarStatus{
-			Text:    s.icons.Recording,
-			Tooltip: "Recording in progress",
+			Text:    fmt.Sprintf("%s %02d:%02d", s.icons.Recording, minutes, seconds),
+			Tooltip: fmt.Sprintf("Recording: %s (%02d:%02d)", s.recordingFile, minutes, seconds),
 			Class:   "recording",
 			Alt:     "recording",
 		}
