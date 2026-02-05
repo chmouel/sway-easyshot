@@ -1,19 +1,21 @@
 package state
 
 import (
+	"fmt"
 	"sway-screenshot/pkg/protocol"
 	"sync"
 )
 
 type State struct {
-	mu            sync.RWMutex
-	recording     bool
-	paused        bool
-	recordingFile string
-	recordingPID  int
-	obsRecording  bool
-	obsPaused     bool
-	icons         Icons
+	mu                 sync.RWMutex
+	recording          bool
+	paused             bool
+	recordingFile      string
+	recordingPID       int
+	obsRecording       bool
+	obsPaused          bool
+	countdownRemaining int
+	icons              Icons
 }
 
 // Icons holds custom icons for different states
@@ -23,6 +25,7 @@ type Icons struct {
 	Paused       string
 	ObsRecording string
 	ObsPaused    string
+	Countdown    string
 }
 
 // DefaultIcons returns the default icon set
@@ -33,6 +36,7 @@ func DefaultIcons() Icons {
 		Paused:       "󰏤",
 		ObsRecording: "󰑊",
 		ObsPaused:    "󰏤",
+		Countdown:    "⏱",
 	}
 }
 
@@ -91,11 +95,34 @@ func (s *State) SetPaused(paused bool) {
 	s.paused = paused
 }
 
+// SetCountdown sets the countdown remaining seconds
+func (s *State) SetCountdown(seconds int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.countdownRemaining = seconds
+}
+
+// ClearCountdown clears the countdown state
+func (s *State) ClearCountdown() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.countdownRemaining = 0
+}
+
 func (s *State) GetWaybarStatus() *protocol.WaybarStatus {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	// Priority: wf-recorder > OBS
+	// Priority: countdown > wf-recorder > OBS
+	if s.countdownRemaining > 0 {
+		return &protocol.WaybarStatus{
+			Text:    fmt.Sprintf("%s %d", s.icons.Countdown, s.countdownRemaining),
+			Tooltip: fmt.Sprintf("Starting in %d seconds", s.countdownRemaining),
+			Class:   "countdown",
+			Alt:     "countdown",
+		}
+	}
+
 	if s.recording {
 		if s.paused {
 			return &protocol.WaybarStatus{

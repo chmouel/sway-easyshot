@@ -11,15 +11,29 @@ import (
 	"sway-screenshot/internal/config"
 	"sway-screenshot/internal/external"
 	"sway-screenshot/internal/notify"
+	"sway-screenshot/internal/state"
 	"sway-screenshot/internal/sway"
 )
 
 type ScreenshotHandler struct {
-	cfg *config.Config
+	cfg   *config.Config
+	state *state.State
 }
 
-func NewScreenshotHandler(cfg *config.Config) *ScreenshotHandler {
-	return &ScreenshotHandler{cfg: cfg}
+func NewScreenshotHandler(cfg *config.Config, st *state.State) *ScreenshotHandler {
+	return &ScreenshotHandler{cfg: cfg, state: st}
+}
+
+// sleepWithCountdown sleeps for the given delay while updating the countdown state
+func sleepWithCountdown(st *state.State, delay int) {
+	if delay <= 0 {
+		return
+	}
+	for i := delay; i > 0; i-- {
+		st.SetCountdown(i)
+		time.Sleep(time.Second)
+	}
+	st.ClearCountdown()
 }
 
 func (h *ScreenshotHandler) CurrentWindowClipboard(ctx context.Context, delay int) error {
@@ -32,7 +46,7 @@ func (h *ScreenshotHandler) CurrentWindowClipboard(ctx context.Context, delay in
 		return fmt.Errorf("failed to get window geometry: %w", err)
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	data, err := external.Grim(ctx, geom, "", "")
 	if err != nil {
@@ -53,7 +67,7 @@ func (h *ScreenshotHandler) CurrentWindowFile(ctx context.Context, delay int) er
 	}
 
 	file := h.cfg.GenerateFilename()
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	_, err = external.Grim(ctx, geom, "", file)
 	if err != nil {
@@ -73,7 +87,7 @@ func (h *ScreenshotHandler) CurrentScreenClipboard(ctx context.Context, delay in
 		return err
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	data, err := external.Grim(ctx, "", output, "")
 	if err != nil {
@@ -94,7 +108,7 @@ func (h *ScreenshotHandler) SelectionFile(ctx context.Context, delay int) error 
 	}
 
 	file := h.cfg.GenerateFilename()
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	_, err = external.Grim(ctx, geom, "", file)
 	if err != nil {
@@ -161,7 +175,7 @@ func (h *ScreenshotHandler) SelectionEdit(ctx context.Context, delay int) error 
 		return fmt.Errorf("selection cancelled or failed: %w", err)
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	data, err := external.Grim(ctx, geom, "", "")
 	if err != nil {
@@ -189,7 +203,7 @@ func (h *ScreenshotHandler) SelectionClipboard(ctx context.Context, delay int) e
 		return fmt.Errorf("selection cancelled or failed: %w", err)
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	data, err := external.Grim(ctx, geom, "", "")
 	if err != nil {

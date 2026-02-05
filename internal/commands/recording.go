@@ -36,7 +36,7 @@ func (h *RecordingHandler) MovieSelection(ctx context.Context, delay int) error 
 		return fmt.Errorf("selection cancelled or failed: %w", err)
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	return h.startRecording(ctx, geom, "")
 }
@@ -51,7 +51,7 @@ func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurren
 		return err
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	return h.startRecording(ctx, "", output)
 }
@@ -66,7 +66,7 @@ func (h *RecordingHandler) MovieCurrentWindow(ctx context.Context, delay int) er
 		return fmt.Errorf("failed to get window geometry: %w", err)
 	}
 
-	time.Sleep(time.Duration(delay) * time.Second)
+	sleepWithCountdown(h.state, delay)
 
 	return h.startRecording(ctx, geom, "")
 }
@@ -177,21 +177,13 @@ func (h *RecordingHandler) PauseRecording(ctx context.Context) error {
 }
 
 // ToggleRecord toggles recording state: starts if not recording, stops if recording.
-// The timeout parameter is only applied when starting a recording, not when stopping.
-func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool, timeout int) error {
+func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool) error {
 	// Check current state
 	currentState := h.state.GetState()
 
 	if currentState.Recording {
-		// Currently recording, stop it (no timeout applied)
+		// Currently recording, stop it
 		return h.StopRecording(ctx)
-	}
-
-	// Apply timeout only when starting a recording
-	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
-		defer cancel()
 	}
 
 	// Not recording, validate and start with specified action

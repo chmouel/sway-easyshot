@@ -39,7 +39,7 @@ func New(cfg *config.Config, debug bool) *Daemon {
 	return &Daemon{
 		cfg:               cfg,
 		state:             st,
-		screenshotHandler: commands.NewScreenshotHandler(cfg),
+		screenshotHandler: commands.NewScreenshotHandler(cfg, st),
 		recordingHandler:  commands.NewRecordingHandler(cfg, st),
 		obsHandler:        commands.NewOBSHandler(cfg, st),
 		ctx:               ctx,
@@ -138,16 +138,6 @@ func (d *Daemon) handleConnection(conn net.Conn) {
 func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 	ctx := d.ctx
 
-	// Extract timeout and create timeout context if specified.
-	// Skip for toggle-record which handles timeout internally (only applies when starting).
-	if req.Options != nil && req.Action != "toggle-record" {
-		if t, ok := req.Options["timeout"].(float64); ok && t > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, time.Duration(t)*time.Second)
-			defer cancel()
-		}
-	}
-
 	// Extract common options
 	delay := 0
 	useCurrentScreen := false
@@ -201,16 +191,12 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 
 	case "toggle-record":
 		startAction := "movie-selection" // default
-		timeout := 0
 		if req.Options != nil {
 			if sa, ok := req.Options["start_action"].(string); ok && sa != "" {
 				startAction = sa
 			}
-			if t, ok := req.Options["timeout"].(float64); ok {
-				timeout = int(t)
-			}
 		}
-		err = d.recordingHandler.ToggleRecord(ctx, startAction, delay, useCurrentScreen, timeout)
+		err = d.recordingHandler.ToggleRecord(ctx, startAction, delay, useCurrentScreen)
 
 	// OBS commands
 	case "obs-toggle-recording":
@@ -239,6 +225,9 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 				}
 				if obsPaused, ok := iconsMap["ObsPaused"].(string); ok {
 					icons.ObsPaused = obsPaused
+				}
+				if countdown, ok := iconsMap["Countdown"].(string); ok {
+					icons.Countdown = countdown
 				}
 				d.state.SetIcons(icons)
 			}

@@ -107,6 +107,11 @@ func waybarStatusCommand() *cli.Command {
 				Usage: "Icon for OBS paused recording state",
 				Value: "󰏤",
 			},
+			&cli.StringFlag{
+				Name:  "icon-countdown",
+				Usage: "Icon for countdown state",
+				Value: "⏱",
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -192,12 +197,6 @@ func toggleRecordCommand() *cli.Command {
 				Aliases: []string{"c"},
 				Usage:   "Use current focused screen (for movie-screen action)",
 			},
-			&cli.IntFlag{
-				Name:    "timeout",
-				Aliases: []string{"t"},
-				Usage:   "Maximum execution time in seconds (0 = no timeout)",
-				Value:   0,
-			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -216,7 +215,6 @@ func toggleRecordCommand() *cli.Command {
 					"start_action":       c.String("start-action"),
 					"delay":              c.Int("delay"),
 					"use_current_screen": c.Bool("current-screen"),
-					"timeout":            c.Int("timeout"),
 				},
 			}
 
@@ -231,14 +229,6 @@ func createSimpleCommand(name, usage string) *cli.Command {
 	return &cli.Command{
 		Name:  name,
 		Usage: usage,
-		Flags: []cli.Flag{
-			&cli.IntFlag{
-				Name:    "timeout",
-				Aliases: []string{"t"},
-				Usage:   "Maximum execution time in seconds (0 = no timeout)",
-				Value:   0,
-			},
-		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
 			if err != nil {
@@ -252,9 +242,6 @@ func createSimpleCommand(name, usage string) *cli.Command {
 			req := protocol.Request{
 				Command: "execute",
 				Action:  name,
-				Options: map[string]interface{}{
-					"timeout": c.Int("timeout"),
-				},
 			}
 
 			return sendAndHandleRequest(cfg.SocketPath, req)
@@ -278,12 +265,6 @@ func createScreenshotCommand(name, usage string) *cli.Command {
 				Aliases: []string{"c"},
 				Usage:   "Use current focused screen (skip selection)",
 			},
-			&cli.IntFlag{
-				Name:    "timeout",
-				Aliases: []string{"t"},
-				Usage:   "Maximum execution time in seconds (0 = no timeout)",
-				Value:   0,
-			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -301,7 +282,6 @@ func createScreenshotCommand(name, usage string) *cli.Command {
 				Options: map[string]interface{}{
 					"delay":              c.Int("delay"),
 					"use_current_screen": c.Bool("current-screen"),
-					"timeout":            c.Int("timeout"),
 				},
 			}
 
@@ -406,6 +386,7 @@ func handleWaybarStatus(cfg *config.Config, follow bool, c *cli.Command) error {
 		Paused:       c.String("icon-paused"),
 		ObsRecording: c.String("icon-obs-recording"),
 		ObsPaused:    c.String("icon-obs-paused"),
+		Countdown:    c.String("icon-countdown"),
 	}
 	if follow {
 		return followWaybarStatus(cfg, icons)
