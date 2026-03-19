@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -161,7 +163,41 @@ func (h *RecordingHandler) StopRecording(ctx context.Context) error {
 	// Update state
 	h.state.SetRecording(false, "", 0)
 
-	_ = notify.Send(5000, h.cfg.RecordingStopIcon, fmt.Sprintf("%s is available", base+".mp4"))
+	actions := map[string]string{
+		"copypath": "Copy path",
+		"show":     "Show",
+		"rename":   "Rename",
+		"delete":   "Delete",
+	}
+
+	action, err := notify.SendWithActions(30000, h.cfg.RecordingStopIcon, filepath.Base(mp4File), actions)
+	if err != nil {
+		_ = notify.Send(5000, h.cfg.RecordingStopIcon, fmt.Sprintf("%s is available", filepath.Base(mp4File)))
+		return nil
+	}
+
+	action = strings.TrimSpace(action)
+
+	switch action {
+	case "copypath":
+		return external.WlCopyText(ctx, mp4File)
+
+	case "show":
+		return external.Nautilus(ctx, "file://"+mp4File)
+
+	case "rename":
+		newname, err := external.Zenity(ctx, "Rename file", filepath.Base(mp4File))
+		if err != nil || newname == "" {
+			return nil
+		}
+		if !strings.HasSuffix(newname, ".mp4") {
+			newname += ".mp4"
+		}
+		return os.Rename(mp4File, filepath.Join(filepath.Dir(mp4File), newname))
+
+	case "delete":
+		return os.Remove(mp4File)
+	}
 
 	return nil
 }
