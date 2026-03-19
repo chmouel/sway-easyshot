@@ -35,11 +35,16 @@ A screenshot and screen recording utility for Sway/Wayland.
 
 ## Installation
 
+## AUR Arch
+```
+yay install sway-easyshot-bin
+```
+
+### jsource
 ```bash
 go install github.com/chmouel/sway-easyshot/cmd/sway-easyshot@latest
 ```
-
-Or build from source:
+Or build directly:
 
 ```bash
 make build
