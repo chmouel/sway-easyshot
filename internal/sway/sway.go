@@ -18,19 +18,20 @@ type swayRect struct {
 }
 
 type swayNode struct {
-	Focused      bool       `json:"focused"`
-	Rect         swayRect   `json:"rect"`
-	Type         string     `json:"type"`
-	Nodes        []swayNode `json:"nodes"`
+	Focused       bool       `json:"focused"`
+	Rect          swayRect   `json:"rect"`
+	Type          string     `json:"type"`
+	Nodes         []swayNode `json:"nodes"`
 	FloatingNodes []swayNode `json:"floating_nodes"`
 }
 
 type swayOutput struct {
-	Name    string `json:"name"`
-	Active  bool   `json:"active"`
-	Focused bool   `json:"focused"`
-	Make    string `json:"make"`
-	Model   string `json:"model"`
+	Name    string   `json:"name"`
+	Active  bool     `json:"active"`
+	Focused bool     `json:"focused"`
+	Make    string   `json:"make"`
+	Model   string   `json:"model"`
+	Rect    swayRect `json:"rect"`
 }
 
 // GetFocusedWindowGeometry returns the geometry of the focused window
@@ -53,6 +54,29 @@ func GetFocusedWindowGeometry(ctx context.Context) (string, error) {
 
 	rect := focused.Rect
 	return fmt.Sprintf("%d,%d %dx%d", rect.X, rect.Y, rect.Width, rect.Height), nil
+}
+
+// GetOutputGeometry returns the geometry string for the named output.
+func GetOutputGeometry(ctx context.Context, outputName string) (string, error) {
+	cmd := exec.CommandContext(ctx, "swaymsg", "-t", "get_outputs")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", fmt.Errorf("failed to get sway outputs: %w", err)
+	}
+
+	var outputs []swayOutput
+	if err := json.Unmarshal(output, &outputs); err != nil {
+		return "", fmt.Errorf("failed to parse sway outputs: %w", err)
+	}
+
+	for _, o := range outputs {
+		if o.Name == outputName {
+			r := o.Rect
+			return fmt.Sprintf("%d,%d %dx%d", r.X, r.Y, r.Width, r.Height), nil
+		}
+	}
+
+	return "", fmt.Errorf("output %q not found", outputName)
 }
 
 // GetFocusedOutputName returns the name of the focused output
@@ -95,7 +119,7 @@ func SelectOutput(ctx context.Context, useCurrentScreen bool) (string, error) {
 	}
 
 	var activeOutputs []string
-	var outputMap = make(map[string]string)
+	outputMap := make(map[string]string)
 
 	for _, output := range outputs {
 		if output.Active {

@@ -165,7 +165,51 @@ func movieSelectionCommand() *cli.Command {
 }
 
 func movieScreenCommand() *cli.Command {
-	return createScreenshotCommand("movie-screen", "Record video of screen")
+	return &cli.Command{
+		Name:  "movie-screen",
+		Usage: "Record video of screen",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "delay",
+				Aliases: []string{"w"},
+				Usage:   "Delay capture/recording in seconds",
+				Value:   0,
+			},
+			&cli.BoolFlag{
+				Name:    "current-screen",
+				Aliases: []string{"c"},
+				Usage:   "Use current focused screen (skip selection)",
+			},
+			&cli.IntFlag{
+				Name:    "crop-top",
+				Aliases: []string{"t"},
+				Usage:   "Crop N pixels from the top of the screen",
+				Value:   0,
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := ensureDaemonRunning(cfg); err != nil {
+				return err
+			}
+
+			req := protocol.Request{
+				Command: "execute",
+				Action:  "movie-screen",
+				Options: map[string]interface{}{
+					"delay":              c.Int("delay"),
+					"use_current_screen": c.Bool("current-screen"),
+					"crop_top":           c.Int("crop-top"),
+				},
+			}
+
+			return sendAndHandleRequest(cfg.SocketPath, req)
+		},
+	}
 }
 
 func movieCurrentWindowCommand() *cli.Command {
@@ -202,6 +246,12 @@ func toggleRecordCommand() *cli.Command {
 				Aliases: []string{"c"},
 				Usage:   "Use current focused screen (for movie-screen action)",
 			},
+			&cli.IntFlag{
+				Name:    "crop-top",
+				Aliases: []string{"t"},
+				Usage:   "Crop N pixels from the top of the screen (for movie-screen action)",
+				Value:   0,
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -220,6 +270,7 @@ func toggleRecordCommand() *cli.Command {
 					"start_action":       c.String("start-action"),
 					"delay":              c.Int("delay"),
 					"use_current_screen": c.Bool("current-screen"),
+					"crop_top":           c.Int("crop-top"),
 				},
 			}
 

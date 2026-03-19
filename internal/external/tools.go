@@ -54,7 +54,7 @@ func Slurp(ctx context.Context, color string) (string, error) {
 
 // WlCopy copies data to clipboard
 func WlCopy(ctx context.Context, data []byte, mimeType string) error {
-	cmd := exec.CommandContext(ctx, "wl-copy", "-t", mimeType)
+	cmd := exec.CommandContext(ctx, "wl-copy", "-t", mimeType) //nolint:gosec
 	cmd.Stdin = bytes.NewReader(data)
 	return cmd.Run()
 }
@@ -66,7 +66,7 @@ func WlCopyText(ctx context.Context, text string) error {
 
 // WlPaste pastes from clipboard
 func WlPaste(ctx context.Context, mimeType string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, "wl-paste", "--type", mimeType)
+	cmd := exec.CommandContext(ctx, "wl-paste", "--type", mimeType) //nolint:gosec
 	return cmd.Output()
 }
 
@@ -209,7 +209,7 @@ func Wofi(ctx context.Context, prompt string, options []string) (string, error) 
 
 // Nautilus opens a file in nautilus
 func Nautilus(ctx context.Context, fileURI string) error {
-	cmd := exec.CommandContext(ctx, "nautilus", fileURI)
+	cmd := exec.CommandContext(ctx, "nautilus", fileURI) //nolint:gosec
 	return cmd.Start()
 }
 

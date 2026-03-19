@@ -46,7 +46,7 @@ func (h *RecordingHandler) MovieSelection(ctx context.Context, delay int) error 
 }
 
 // MovieScreen records a video of the screen (or current screen if useCurrentScreen is true).
-func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurrentScreen bool) error {
+func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurrentScreen bool, cropTop int) error {
 	output, err := sway.SelectOutput(ctx, useCurrentScreen)
 	if err != nil || output == "" {
 		return fmt.Errorf("failed to select output: %w", err)
@@ -57,6 +57,19 @@ func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurren
 	}
 
 	sleepWithCountdown(h.state, delay)
+
+	if cropTop > 0 {
+		geom, err := sway.GetOutputGeometry(ctx, output)
+		if err != nil {
+			return fmt.Errorf("failed to get output geometry: %w", err)
+		}
+		var x, y, w, ht int
+		if _, err := fmt.Sscanf(geom, "%d,%d %dx%d", &x, &y, &w, &ht); err != nil {
+			return fmt.Errorf("failed to parse output geometry: %w", err)
+		}
+		croppedGeom := fmt.Sprintf("%d,%d %dx%d", x, y+cropTop, w, ht-cropTop)
+		return h.startRecording(ctx, croppedGeom, "")
+	}
 
 	return h.startRecording(ctx, "", output)
 }
@@ -128,7 +141,7 @@ func (h *RecordingHandler) StopRecording(ctx context.Context) error {
 	aviFile := base + ".avi"
 
 	// Check if .avi file exists
-	if _, err := os.Stat(aviFile); os.IsNotExist(err) {
+	if _, err := os.Stat(aviFile); os.IsNotExist(err) { //nolint:gosec
 		_ = notify.Send(5000, h.cfg.ScreenshotIcon, fmt.Sprintf("Could not find %s", aviFile))
 		return fmt.Errorf("recording file not found: %s", aviFile)
 	}
@@ -142,7 +155,7 @@ func (h *RecordingHandler) StopRecording(ctx context.Context) error {
 	}
 
 	// Clean up
-	_ = os.Remove(aviFile)
+	_ = os.Remove(aviFile) //nolint:gosec
 	_ = os.Remove(h.cfg.CacheFile)
 
 	// Update state
@@ -185,7 +198,7 @@ func (h *RecordingHandler) PauseRecording(ctx context.Context) error {
 }
 
 // ToggleRecord toggles recording state: starts if not recording, stops if recording.
-func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool) error {
+func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool, cropTop int) error {
 	// Check current state
 	currentState := h.state.GetState()
 
@@ -200,7 +213,7 @@ func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string,
 		return h.MovieSelection(ctx, delay)
 
 	case "movie-screen":
-		return h.MovieScreen(ctx, delay, useCurrentScreen)
+		return h.MovieScreen(ctx, delay, useCurrentScreen, cropTop)
 
 	case "movie-current-window":
 		return h.MovieCurrentWindow(ctx, delay)

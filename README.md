@@ -59,10 +59,13 @@ sway-easyshot current-screen-clipboard
 # Recording commands
 sway-easyshot movie-selection
 sway-easyshot movie-screen
+sway-easyshot movie-screen --crop-top 75        # skip top 75px (e.g. status bar)
+sway-easyshot movie-screen --current-screen --crop-top 75
 sway-easyshot movie-current-window
 sway-easyshot stop-recording
 sway-easyshot pause-recording
 sway-easyshot toggle-record
+sway-easyshot toggle-record -a movie-screen --crop-top 75
 
 # Waybar integration
 sway-easyshot waybar-status
