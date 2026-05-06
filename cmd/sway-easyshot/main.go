@@ -161,7 +161,44 @@ func selectionClipboardCommand() *cli.Command {
 }
 
 func movieSelectionCommand() *cli.Command {
-	return createScreenshotCommand("movie-selection", "Record video of selection")
+	return &cli.Command{
+		Name:  "movie-selection",
+		Usage: "Record video of selection",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "delay",
+				Aliases: []string{"w"},
+				Usage:   "Delay capture/recording in seconds",
+				Value:   0,
+			},
+			&cli.BoolFlag{
+				Name:    "audio",
+				Aliases: []string{"A"},
+				Usage:   "Record audio from default input device",
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := ensureDaemonRunning(cfg); err != nil {
+				return err
+			}
+
+			req := protocol.Request{
+				Command: "execute",
+				Action:  "movie-selection",
+				Options: map[string]interface{}{
+					"delay": c.Int("delay"),
+					"audio": c.Bool("audio"),
+				},
+			}
+
+			return sendAndHandleRequest(cfg.SocketPath, req)
+		},
+	}
 }
 
 func movieScreenCommand() *cli.Command {
@@ -186,6 +223,11 @@ func movieScreenCommand() *cli.Command {
 				Usage:   "Crop N pixels from the top of the screen",
 				Value:   0,
 			},
+			&cli.BoolFlag{
+				Name:    "audio",
+				Aliases: []string{"A"},
+				Usage:   "Record audio from default input device",
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -204,6 +246,7 @@ func movieScreenCommand() *cli.Command {
 					"delay":              c.Int("delay"),
 					"use_current_screen": c.Bool("current-screen"),
 					"crop_top":           c.Int("crop-top"),
+					"audio":              c.Bool("audio"),
 				},
 			}
 
@@ -213,7 +256,44 @@ func movieScreenCommand() *cli.Command {
 }
 
 func movieCurrentWindowCommand() *cli.Command {
-	return createScreenshotCommand("movie-current-window", "Record video of focused window")
+	return &cli.Command{
+		Name:  "movie-current-window",
+		Usage: "Record video of focused window",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:    "delay",
+				Aliases: []string{"w"},
+				Usage:   "Delay capture/recording in seconds",
+				Value:   0,
+			},
+			&cli.BoolFlag{
+				Name:    "audio",
+				Aliases: []string{"A"},
+				Usage:   "Record audio from default input device",
+			},
+		},
+		Action: func(ctx context.Context, c *cli.Command) error {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := ensureDaemonRunning(cfg); err != nil {
+				return err
+			}
+
+			req := protocol.Request{
+				Command: "execute",
+				Action:  "movie-current-window",
+				Options: map[string]interface{}{
+					"delay": c.Int("delay"),
+					"audio": c.Bool("audio"),
+				},
+			}
+
+			return sendAndHandleRequest(cfg.SocketPath, req)
+		},
+	}
 }
 
 func stopRecordingCommand() *cli.Command {
@@ -252,6 +332,11 @@ func toggleRecordCommand() *cli.Command {
 				Usage:   "Crop N pixels from the top of the screen (for movie-screen action)",
 				Value:   0,
 			},
+			&cli.BoolFlag{
+				Name:    "audio",
+				Aliases: []string{"A"},
+				Usage:   "Record audio from default input device",
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			cfg, err := config.Load()
@@ -271,6 +356,7 @@ func toggleRecordCommand() *cli.Command {
 					"delay":              c.Int("delay"),
 					"use_current_screen": c.Bool("current-screen"),
 					"crop_top":           c.Int("crop-top"),
+					"audio":              c.Bool("audio"),
 				},
 			}
 

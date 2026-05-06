@@ -146,6 +146,7 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 	delay := 0
 	useCurrentScreen := false
 	cropTop := 0
+	audio := false
 
 	if req.Options != nil {
 		if d, ok := req.Options["delay"].(float64); ok {
@@ -156,6 +157,9 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 		}
 		if ct, ok := req.Options["crop_top"].(float64); ok {
 			cropTop = int(ct)
+		}
+		if a, ok := req.Options["audio"].(bool); ok {
+			audio = a
 		}
 	}
 
@@ -183,13 +187,13 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 
 	// Recording commands
 	case "movie-selection":
-		err = d.recordingHandler.MovieSelection(ctx, delay)
+		err = d.recordingHandler.MovieSelection(ctx, delay, audio)
 
 	case "movie-screen":
-		err = d.recordingHandler.MovieScreen(ctx, delay, useCurrentScreen, cropTop)
+		err = d.recordingHandler.MovieScreen(ctx, delay, useCurrentScreen, cropTop, audio)
 
 	case "movie-current-window":
-		err = d.recordingHandler.MovieCurrentWindow(ctx, delay)
+		err = d.recordingHandler.MovieCurrentWindow(ctx, delay, audio)
 
 	case "stop-recording":
 		err = d.recordingHandler.StopRecording(ctx)
@@ -204,7 +208,7 @@ func (d *Daemon) executeCommand(req protocol.Request) protocol.Response {
 				startAction = sa
 			}
 		}
-		err = d.recordingHandler.ToggleRecord(ctx, startAction, delay, useCurrentScreen, cropTop)
+		err = d.recordingHandler.ToggleRecord(ctx, startAction, delay, useCurrentScreen, cropTop, audio)
 
 	// OBS commands
 	case "obs-toggle-recording":

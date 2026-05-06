@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/andreykaipov/goobs"
 )
 
 // Grim captures a screenshot
@@ -71,7 +73,7 @@ func WlPaste(ctx context.Context, mimeType string) ([]byte, error) {
 }
 
 // StartWfRecorder starts video recording
-func StartWfRecorder(ctx context.Context, geometry, output, filename string) (*exec.Cmd, error) {
+func StartWfRecorder(ctx context.Context, geometry, output, filename string, audio bool) (*exec.Cmd, error) {
 	args := []string{}
 
 	if geometry != "" {
@@ -79,6 +81,9 @@ func StartWfRecorder(ctx context.Context, geometry, output, filename string) (*e
 	}
 	if output != "" {
 		args = append(args, "-o", output)
+	}
+	if audio {
+		args = append(args, "-a")
 	}
 
 	args = append(args, "-f", filename)
@@ -164,29 +169,21 @@ func Ffmpeg(ctx context.Context, inputFile, outputFile string) error {
 	return cmd.Run()
 }
 
-// OBSCli executes obs-cli commands
-func OBSCli(ctx context.Context, args ...string) (string, error) {
-	// Get password from pass
-	passCmd := exec.CommandContext(ctx, "pass", "show", "obs/password")
-	password, err := passCmd.Output()
+func passGet(ctx context.Context, key, fallback string) string {
+	out, err := exec.CommandContext(ctx, "pass", "show", key).Output() //nolint:gosec
 	if err != nil {
-		return "", fmt.Errorf("failed to get OBS password: %w", err)
+		return fallback
 	}
+	return strings.TrimSpace(string(out))
+}
 
-	cmdArgs := []string{
-		"--host", "127.0.0.1",
-		"-p", "4444",
-		"--password", strings.TrimSpace(string(password)),
-	}
-	cmdArgs = append(cmdArgs, args...)
-
-	cmd := exec.CommandContext(ctx, "obs-cli", cmdArgs...) //nolint:gosec
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(string(output)), nil
+// NewOBSClient creates a goobs client using connection settings from the pass store.
+// Keys: obs/host (default localhost), obs/port (default 4455), obs/password.
+func NewOBSClient(ctx context.Context) (*goobs.Client, error) {
+	host := passGet(ctx, "obs/host", "127.0.0.1")
+	port := passGet(ctx, "obs/port", "4455")
+	password := passGet(ctx, "obs/password", "")
+	return goobs.New(fmt.Sprintf("%s:%s", host, port), goobs.WithPassword(password))
 }
 
 // Wofi shows a selection menu

@@ -32,7 +32,7 @@ func NewRecordingHandler(cfg *config.Config, st *state.State) *RecordingHandler 
 }
 
 // MovieSelection records a video of a selected region.
-func (h *RecordingHandler) MovieSelection(ctx context.Context, delay int) error {
+func (h *RecordingHandler) MovieSelection(ctx context.Context, delay int, audio bool) error {
 	if err := notify.CaptureDelay(delay, "movie selection", h.cfg.RecordingStartIcon); err != nil {
 		return err
 	}
@@ -44,11 +44,11 @@ func (h *RecordingHandler) MovieSelection(ctx context.Context, delay int) error 
 
 	sleepWithCountdown(h.state, delay)
 
-	return h.startRecording(ctx, geom, "")
+	return h.startRecording(ctx, geom, "", audio)
 }
 
 // MovieScreen records a video of the screen (or current screen if useCurrentScreen is true).
-func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurrentScreen bool, cropTop int) error {
+func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurrentScreen bool, cropTop int, audio bool) error {
 	output, err := sway.SelectOutput(ctx, useCurrentScreen)
 	if err != nil || output == "" {
 		return fmt.Errorf("failed to select output: %w", err)
@@ -70,14 +70,14 @@ func (h *RecordingHandler) MovieScreen(ctx context.Context, delay int, useCurren
 			return fmt.Errorf("failed to parse output geometry: %w", err)
 		}
 		croppedGeom := fmt.Sprintf("%d,%d %dx%d", x, y+cropTop, w, ht-cropTop)
-		return h.startRecording(ctx, croppedGeom, "")
+		return h.startRecording(ctx, croppedGeom, "", audio)
 	}
 
-	return h.startRecording(ctx, "", output)
+	return h.startRecording(ctx, "", output, audio)
 }
 
 // MovieCurrentWindow records a video of the currently focused window.
-func (h *RecordingHandler) MovieCurrentWindow(ctx context.Context, delay int) error {
+func (h *RecordingHandler) MovieCurrentWindow(ctx context.Context, delay int, audio bool) error {
 	if err := notify.CaptureDelay(delay, "movie current window", h.cfg.RecordingStartIcon); err != nil {
 		return err
 	}
@@ -89,10 +89,10 @@ func (h *RecordingHandler) MovieCurrentWindow(ctx context.Context, delay int) er
 
 	sleepWithCountdown(h.state, delay)
 
-	return h.startRecording(ctx, geom, "")
+	return h.startRecording(ctx, geom, "", audio)
 }
 
-func (h *RecordingHandler) startRecording(ctx context.Context, geometry, output string) error {
+func (h *RecordingHandler) startRecording(ctx context.Context, geometry, output string, audio bool) error {
 	base := h.cfg.GenerateRecordingBase()
 	file := base + ".avi"
 
@@ -108,7 +108,7 @@ func (h *RecordingHandler) startRecording(ctx context.Context, geometry, output 
 	}
 
 	// Start wf-recorder
-	cmd, err := external.StartWfRecorder(ctx, geometry, output, file)
+	cmd, err := external.StartWfRecorder(ctx, geometry, output, file, audio)
 	if err != nil {
 		return fmt.Errorf("failed to start recording: %w", err)
 	}
@@ -234,7 +234,7 @@ func (h *RecordingHandler) PauseRecording(ctx context.Context) error {
 }
 
 // ToggleRecord toggles recording state: starts if not recording, stops if recording.
-func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool, cropTop int) error {
+func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string, delay int, useCurrentScreen bool, cropTop int, audio bool) error {
 	// Check current state
 	currentState := h.state.GetState()
 
@@ -246,13 +246,13 @@ func (h *RecordingHandler) ToggleRecord(ctx context.Context, startAction string,
 	// Not recording, validate and start with specified action
 	switch startAction {
 	case "movie-selection":
-		return h.MovieSelection(ctx, delay)
+		return h.MovieSelection(ctx, delay, audio)
 
 	case "movie-screen":
-		return h.MovieScreen(ctx, delay, useCurrentScreen, cropTop)
+		return h.MovieScreen(ctx, delay, useCurrentScreen, cropTop, audio)
 
 	case "movie-current-window":
-		return h.MovieCurrentWindow(ctx, delay)
+		return h.MovieCurrentWindow(ctx, delay, audio)
 
 	default:
 		return fmt.Errorf("invalid start action: %s (valid: movie-selection, movie-screen, movie-current-window)", startAction)
