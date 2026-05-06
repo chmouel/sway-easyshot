@@ -169,6 +169,20 @@ func Ffmpeg(ctx context.Context, inputFile, outputFile string) error {
 	return cmd.Run()
 }
 
+// FfmpegRemux remuxes a video file into MP4 using stream copy (no re-encode).
+func FfmpegRemux(ctx context.Context, inputFile, outputFile string) error {
+	args := []string{
+		"-i", fmt.Sprintf("file:%s", inputFile),
+		"-c", "copy",
+		"-movflags", "+faststart",
+		outputFile,
+	}
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...) //nolint:gosec
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 func passGet(ctx context.Context, key, fallback string) string {
 	out, err := exec.CommandContext(ctx, "pass", "show", key).Output() //nolint:gosec
 	if err != nil {
